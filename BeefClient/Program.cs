@@ -13,9 +13,20 @@ namespace BeefClient
         static void Main(string[] args)
         {
             Console.WriteLine("Hello world");
-            //Console.ReadKey();
 
+            UserAuth ca = new UserAuth();
+            if (!ca.CookieAuth1("http://localhost:8080", "ahai","pass"))
+            {
+                Console.WriteLine("Login failed\nPress any key to exit...");
+                Console.ReadKey();
+            }
+            else Console.WriteLine("Login OK");
             var hubConnection = new HubConnection(" http://localhost:8080");
+            hubConnection.CookieContainer = ca.Cookies;
+
+            hubConnection.Headers.Add("username", "ahai");
+            hubConnection.Headers.Add("password", "ahai");
+
             var chat = hubConnection.CreateHubProxy("ChatHub");
             chat.On<string, string>("addMessage", (name, message) => { Console.Write(name + ": "); Console.WriteLine(message); });
             chat.On<string>("send", (message) => { Console.Write("server : "); Console.WriteLine(message); });

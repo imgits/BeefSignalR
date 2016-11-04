@@ -11,16 +11,19 @@ namespace BeefServer
     {
         public void Notify(string name, string message)
         {
+            string user = this.Context.Request.User.Identity.Name;
             Console.WriteLine("Connect by " + name + " with id:" + message);
         }
 
         public void Send(string name, string message)
         {
+            string user = this.Context.Request.User.Identity.Name;
             Clients.All.addMessage(name, message);
         }
 
         public void send(string message)
         {
+            string user = this.Context.Request.User.Identity.Name;
             Clients.All.addMessage("Server", message);
         }
     }

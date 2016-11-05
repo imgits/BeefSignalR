@@ -22,7 +22,8 @@ namespace BeefClient
                 {
                     var content = string.Format("Username={0}&Password={1}", username, password);
                     var response = httpClient.PostAsync(url + "/Account/Login", new StringContent(content, Encoding.UTF8, "application/x-www-form-urlencoded")).Result;
-                    if (response.StatusCode == HttpStatusCode.OK) return true;
+                    //if (response.StatusCode == HttpStatusCode.OK) return true;
+                    if (response.RequestMessage.RequestUri.LocalPath == "/index.html") return true;
                 }
             }
             return false;

@@ -18,7 +18,7 @@ namespace BeefServer
             using (Database.BeefDbContext Db = new Database.BeefDbContext())
             {
                 User user = new User() { username= "ahai",password="password",role="admin"};
-                Db.add_user(user);
+                //Db.add_user(user);
             }
 
             using (WebApp.Start<Startup>("http://+:8088/"))

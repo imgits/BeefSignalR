@@ -1,0 +1,21 @@
+﻿public ModuleName add_module{1}(ModuleName module)
+{
+	try
+	{
+		string sql = "INSERT INTO user (ColumnNameList) VALUES (ColumnValueList)";
+        using ({4} conn = new {4}(ConnectionString))
+        {
+			MySqlCommand cmd = new MySqlCommand(sql, conn);
+            //cmd.Parameters.AddWithValue
+            int ret = cmd.ExecuteNonQuery();
+            int last_insert_id = get_last_insert_id(conn);
+            user = get_user(last_insert_id);
+            return user;
+         }
+	}
+	catch (MySqlException ex)
+	{
+	}
+	return null;
+}
+

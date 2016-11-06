@@ -43,6 +43,10 @@ namespace Database2Sharp
 
         public override void Init()
         {
+            DbConnectionTypeName = "MySqlConnection";
+            DbCommandTypeName = "MySqlCommand";
+            DbDataReaderTypeName = "MySqlDataReader";
+
             DbType2SharpType["int"] = "int";
             DbType2SharpType["varchar"] = "string";
             DbType2SharpType["text"] = "string";
@@ -92,8 +96,8 @@ namespace Database2Sharp
             string InsertCode = InsertTemplate.Replace("Model", Model);
             InsertCode = InsertCode.Replace("model", model);
             InsertCode = InsertCode.Replace("table_name", table.table_name);
-            InsertCode = InsertCode.Replace("SqlConnection", "MySqlConnection");
-            InsertCode = InsertCode.Replace("SqlCommand", "MySqlCommand");
+            InsertCode = InsertCode.Replace("SqlConnection", DbConnectionTypeName);
+            InsertCode = InsertCode.Replace("SqlCommand", DbCommandTypeName);
             InsertCode = InsertCode.Replace("ColunmNameList", ColunmNameList);
             InsertCode = InsertCode.Replace("ColumnParamList", ColumnParamList);
             InsertCode = InsertCode.Replace("//SetParameters", SetParameters);
@@ -146,9 +150,9 @@ namespace Database2Sharp
             string SelectCode = SelectTemplate.Replace("Model", Model);
             SelectCode = SelectCode.Replace("model", model);
             SelectCode = SelectCode.Replace("table_name", table.table_name);
-            SelectCode = SelectCode.Replace("SqlConnection", "MySqlConnection");
-            SelectCode = SelectCode.Replace("SqlCommand", "MySqlCommand");
-            SelectCode = SelectCode.Replace("SqlDataReader", "MySqlDataReader");
+            SelectCode = SelectCode.Replace("SqlConnection", DbConnectionTypeName);
+            SelectCode = SelectCode.Replace("SqlCommand", DbCommandTypeName);
+            SelectCode = SelectCode.Replace("SqlDataReader", DbDataReaderTypeName);
             SelectCode = SelectCode.Replace("//DefineStream", DefineStream);
             SelectCode = SelectCode.Replace("//ReadColumns", ReadColumns);
             Show(SelectCode);
@@ -198,9 +202,9 @@ namespace Database2Sharp
             string SelectCode = SelectTemplate.Replace("Model", Model);
             SelectCode = SelectCode.Replace("model", model);
             SelectCode = SelectCode.Replace("table_name", table.table_name);
-            SelectCode = SelectCode.Replace("SqlConnection", "MySqlConnection");
-            SelectCode = SelectCode.Replace("SqlCommand", "MySqlCommand");
-            SelectCode = SelectCode.Replace("SqlDataReader", "MySqlDataReader");
+            SelectCode = SelectCode.Replace("SqlConnection", DbConnectionTypeName);
+            SelectCode = SelectCode.Replace("SqlCommand", DbCommandTypeName);
+            SelectCode = SelectCode.Replace("SqlDataReader", DbDataReaderTypeName);
             SelectCode = SelectCode.Replace("//DefineStream", DefineStream);
             SelectCode = SelectCode.Replace("//ReadColumns", ReadColumns);
             Show(SelectCode);
@@ -240,8 +244,8 @@ namespace Database2Sharp
             string UpdateCode = InsertTemplate.Replace("Model", Model);
             UpdateCode = UpdateCode.Replace("model", model);
             UpdateCode = UpdateCode.Replace("table_name", table.table_name);
-            UpdateCode = UpdateCode.Replace("SqlConnection", "MySqlConnection");
-            UpdateCode = UpdateCode.Replace("SqlCommand", "MySqlCommand");
+            UpdateCode = UpdateCode.Replace("SqlConnection", DbConnectionTypeName);
+            UpdateCode = UpdateCode.Replace("SqlCommand", DbCommandTypeName);
             UpdateCode = UpdateCode.Replace("NameValueList", NameValueList);
             UpdateCode = UpdateCode.Replace("//SetParameters", SetParameters);
 
@@ -269,8 +273,8 @@ namespace Database2Sharp
             string DeleteCode = DeleteTemplate.Replace("Model", Model);
             DeleteCode = DeleteCode.Replace("model", model);
             DeleteCode = DeleteCode.Replace("table_name", table.table_name);
-            DeleteCode = DeleteCode.Replace("SqlConnection", "MySqlConnection");
-            DeleteCode = DeleteCode.Replace("SqlCommand", "MySqlCommand");
+            DeleteCode = DeleteCode.Replace("SqlConnection", DbConnectionTypeName);
+            DeleteCode = DeleteCode.Replace("SqlCommand", DbCommandTypeName);
 
             Show(DeleteCode);
             return DeleteCode;
@@ -295,8 +299,8 @@ namespace Database2Sharp
             string DeleteCode = DeleteTemplate.Replace("Model", Model);
             DeleteCode = DeleteCode.Replace("model", model);
             DeleteCode = DeleteCode.Replace("table_name", table.table_name);
-            DeleteCode = DeleteCode.Replace("SqlConnection", "MySqlConnection");
-            DeleteCode = DeleteCode.Replace("SqlCommand", "MySqlCommand");
+            DeleteCode = DeleteCode.Replace("SqlConnection", DbConnectionTypeName);
+            DeleteCode = DeleteCode.Replace("SqlCommand", DbCommandTypeName);
 
             Show(DeleteCode);
             return DeleteCode;

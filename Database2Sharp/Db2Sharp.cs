@@ -205,11 +205,15 @@ namespace Database2Sharp
 
     class Db2Sharp
     {
-        protected string ConnectionString = null;
-        public List<DbSchemaTable> Tables =new List<DbSchemaTable>();
-        protected DbConnection dbConnection = null;
+        public List<DbSchemaTable> Tables = new List<DbSchemaTable>();
 
+        protected string ConnectionString = null;
+        protected DbConnection dbConnection = null;
         protected Dictionary<string, string> DbType2SharpType = new Dictionary<string, string>();
+
+        protected string DbConnectionTypeName = "DbConnection";
+        protected string DbCommandTypeName = "DbCommand";
+        protected string DbDataReaderTypeName = "DbDataReader";
 
         public virtual bool OpenConnection()
         {

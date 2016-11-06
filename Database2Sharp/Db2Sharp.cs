@@ -193,7 +193,7 @@ namespace Database2Sharp
 
         public override string ToString()
         {
-            string str = "class " + ClassName + "\n{\n";
+            string str = "\nclass " + ClassName + "\n{\n";
             foreach(string key in DataMembers.Keys)
             {
                 str += "\tpublic " + DataMembers[key] + "\t" + key + ";\n";

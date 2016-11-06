@@ -9,11 +9,67 @@ using System.Data.SqlClient;
 
 namespace Database2Sharp
 {
+    class dbmodel
+    {
+        public virtual string sql_add() { return null; }
+    }
+
     class User
     {
         public int id;
         public string username;
         public string password;
+        public User() { }
+
+        public User(SqlDataReader reader)
+        {
+            this.id = reader.GetInt32(0);
+            this.username = reader.GetString(1);
+            this.password = reader.GetString(2);
+        }
+
+        public static string sql_add()
+        {
+            return "INSERT INTO user (username,password) VALUES(@username,@password)";
+        }
+
+        public void sql_add_params(DbCommand cmd)
+        {
+            cmd.Parameters.Insert(0,this.username);
+            cmd.Parameters.Insert(1, this.username);
+        }
+
+        public static string sql_get(int id)
+        {
+            return "SELECT * FROM user while id=" +id;
+        }
+
+        public static string sql_gets(string where_define)
+        {
+            return "SELECT * FROM user while " + where_define;
+        }
+
+        public static string sql_set(int id)
+        {
+            return "UPDATE user SET username=@username, password=@password WHERE id=" + id;
+        }
+
+        public void sql_set_params(DbCommand cmd)
+        {
+            cmd.Parameters.Insert(0, this.username);
+            cmd.Parameters.Insert(1, this.username);
+        }
+
+        public static string sql_del(int id)
+        {
+            return "DELETE FROM user while id=" + id;
+        }
+
+        public static string sql_dels(string where_define)
+        {
+            return "DELETE FROM user while "+ where_define;
+        }
+
     }
 
     class Model
@@ -182,6 +238,26 @@ namespace Database2Sharp
         }
         //DeleteStatement1End
 
+        public User    add(User user)
+        {
+            try
+            {
+                string sql = User.sql_add();
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    user.sql_add_params(cmd);
+                    int ret = cmd.ExecuteNonQuery();
+                    int last_insert_id = get_last_insert_id(conn);
+                    user = get_user(last_insert_id);
+                    return user;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
         public User add_user(User user)  
         {
             try

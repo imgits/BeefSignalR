@@ -6,68 +6,84 @@ using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Dynamic;
+using System.Reflection;
 
 namespace Database2Sharp
 {
-    class dbmodel
+    //EntityBase_Start
+    class EntityBase
     {
-        public virtual string sql_add() { return null; }
+        public int id { get; set; }
+
+        public virtual void Init(DbDataReader reader) { }
+        public virtual string insert_sql() { return null; }
+        public virtual string update_sql(int id) { return null; }
+        public virtual string update_sql(string where_define) { return null; }
+
+        public virtual string select_sql(int id)
+        {
+            string sql = string.Format("SELECT * FROM {0} WHRER id={1}", this.GetType().Name, id);
+            return sql;
+        }
+
+        public virtual string select_sql(string where_define)
+        {
+            string sql = string.Format("SELECT * FROM {0} WHRER ", this.GetType().Name, where_define);
+            return sql;
+        }
+
+        public string delete_sql(int id)
+        {
+            string sql = string.Format("DELETE FROM {0} WHRER id={1}",this.GetType().Name,id);
+            return sql;
+        }
+
+        public string delete_sql(string where_define)
+        {
+            string sql = string.Format("DELETE FROM {0} WHRER ", this.GetType().Name, where_define);
+            return sql;
+        }
+
+        public virtual void set_sql_params(DbCommand cmd) { }
     }
+    //EntityBase_End
 
-    class User
+    partial class User : EntityBase
     {
-        public int id;
-        public string username;
-        public string password;
-        public User() { }
+        //public int id { get; set; }
 
-        public User(SqlDataReader reader)
+        public string username { get; set; }
+        public byte[] password { get ; set ; }
+        public DateTime create_time { get; set; }
+        public string info { get; set; }
+
+        public override void Init(DbDataReader reader)
         {
             this.id = reader.GetInt32(0);
             this.username = reader.GetString(1);
-            this.password = reader.GetString(2);
+            //this.password = reader.GetString(2);
         }
 
-        public static string sql_add()
+        public override string insert_sql()
         {
             return "INSERT INTO user (username,password) VALUES(@username,@password)";
         }
 
-        public void sql_add_params(DbCommand cmd)
+        public override void set_sql_params(DbCommand cmd)
         {
             cmd.Parameters.Insert(0,this.username);
-            cmd.Parameters.Insert(1, this.username);
+            cmd.Parameters.Insert(1, this.password);
         }
 
-        public static string sql_get(int id)
-        {
-            return "SELECT * FROM user while id=" +id;
-        }
-
-        public static string sql_gets(string where_define)
-        {
-            return "SELECT * FROM user while " + where_define;
-        }
-
-        public static string sql_set(int id)
+        public override string update_sql(int id)
         {
             return "UPDATE user SET username=@username, password=@password WHERE id=" + id;
         }
 
-        public void sql_set_params(DbCommand cmd)
+        public override string update_sql(string where_define)
         {
-            cmd.Parameters.Insert(0, this.username);
-            cmd.Parameters.Insert(1, this.username);
-        }
-
-        public static string sql_del(int id)
-        {
-            return "DELETE FROM user while id=" + id;
-        }
-
-        public static string sql_dels(string where_define)
-        {
-            return "DELETE FROM user while "+ where_define;
+            return "UPDATE user SET username=@username, password=@password WHERE " + where_define;
         }
 
     }
@@ -77,8 +93,7 @@ namespace Database2Sharp
 
     }
 
-
-    class TemplateFile
+    class TemplateClass
     {
         string ConnectionString = "";
 
@@ -237,20 +252,32 @@ namespace Database2Sharp
             return false;
         }
         //DeleteStatement1End
+    }
 
-        public User    add(User user)
+    class TestTemplateClass
+    {
+        string ConnectionString = @"Data Source=(LocalDb)\MSSQLLocalDB;Initial Catalog=test;Integrated Security=True";
+        //CURD_Start
+        int get_last_insert_id(SqlConnection conn)
+        {
+            SqlCommand cmd = new SqlCommand("SELECT LAST_INSERT_ID()", conn);
+            int last_id = (int)cmd.ExecuteScalar();
+            return last_id;
+        }
+
+        public T add<T>(T t) where T : class, new()
         {
             try
             {
-                string sql = User.sql_add();
-                using (SqlConnection conn = new SqlConnection())
+                string sql = insert_sql(t);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
                 {
+                    conn.Open();
                     SqlCommand cmd = new SqlCommand(sql, conn);
-                    user.sql_add_params(cmd);
                     int ret = cmd.ExecuteNonQuery();
                     int last_insert_id = get_last_insert_id(conn);
-                    user = get_user(last_insert_id);
-                    return user;
+                    t = get<T>(last_insert_id);
+                    return t;
                 }
             }
             catch (MySqlException ex)
@@ -258,6 +285,473 @@ namespace Database2Sharp
             }
             return null;
         }
+
+        public T get<T>(int id) where T : class, new()
+        {
+            try
+            {
+                string sql = select_sql<T>("id=" + id);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        T t = select_read<T>(reader);
+                        return t;
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
+
+        public List<T> gets<T>(string where_define) where T : class, new()
+        {
+            try
+            {
+                List<T> tlist = new List<T>();
+                string sql = select_sql<T>(where_define);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        T t = select_read<T>(reader);
+                        tlist.Add(t);
+                    }
+                    return tlist;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
+
+        public List<dynamic> gets<T>(string columns, string where_define) where T : EntityBase, new()
+        {
+            try
+            {
+                List<dynamic> tlist = new List<dynamic>();
+                string[] colnames = columns.Split(new char[] { ',' });
+                string sql = string.Format("SELECT {0} FROM {1} WHERE {2}", columns, typeof(T).Name, where_define);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        dynamic dt = new ExpandoObject();
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            dt[colnames[i]] = reader.GetValue(i);
+                        }
+                        tlist.Add(dt);
+                    }
+                    return tlist;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
+
+        public bool set<T>(T t) where T : class, new()
+        {
+            try
+            {
+                PropertyInfo pi = t.GetType().GetProperty("id");
+                int id = (int)pi.GetValue(t);
+                string sql = update_sql(t, "id=" + id);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int result = cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return false;
+        }
+
+        public bool sets<T>(dynamic t, string where_define) where T : class
+        {
+            try
+            {
+                string set_values = "";
+                int count = 0;
+                foreach (var property in (IDictionary<String, Object>)t)
+                {
+                    if (count++ > 0) set_values += ',';
+                    set_values += property.Key + "='" + property.Value + "'";
+                }
+                string sql = string.Format("UPDATE {0} SET {1} WHERE {2}", typeof(T).Name, set_values, where_define);
+
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int result = cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return false;
+        }
+
+        public bool del<T>(int id) where T : class, new()
+        {
+            string where_define = "id=" + id;
+            return del<T>(where_define);
+        }
+
+        public bool del<T>(string where_define) where T : class, new()
+        {
+            try
+            {
+                T t = new T();
+                string sql = string.Format("DELETE FROM {0} WHERE {1}",typeof(T).GetType().Name,where_define);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int result = cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return false;
+        }
+
+        string insert_sql<T>(T t) where T : class
+        {
+            Type type = typeof(T);
+            //PropertyInfo[] properties = type.GetProperties(BindingFlags.Public);
+            PropertyInfo[] properties = type.GetProperties();
+            string column_names = "";
+            string column_values = "";
+            char comma = ' ';
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.Name == "id") continue;
+                column_names += comma + property.Name;
+                object value = property.GetValue(t);
+                column_values += comma;
+                column_values += (value == null) ? "\'\'" : '\'' + value.ToString() + '\'';
+                comma = ',';
+            }
+            string sql = string.Format("INSERT INTO {0} ({1}) VALUES({2})",  type.Name.ToLower(), column_names, column_values);
+            return sql;
+        }
+
+        string update_sql<T>(T t, string where_define) where T : class
+        {
+            Type type = typeof(T);
+            PropertyInfo[] properties = type.GetProperties();// ((BindingFlags.Instance | BindingFlags.Public);
+            string column_name_values = "";
+            char comma = ' ';
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.Name == "id") continue;
+                column_name_values += comma + property.Name + "='" + property.GetValue(t).ToString() + '\'';
+                comma = ',';
+            }
+            string sql = string.Format("UPDATE {0} SET ({1}) WHERE {2}", type.Name, column_name_values, where_define);
+            return sql;
+        }
+
+        string select_sql<T>(string where_define)
+        {
+            Type type = typeof(T);
+            PropertyInfo[] properties = type.GetProperties();// ((BindingFlags.Instance | BindingFlags.Public);
+            string column_names = "";
+            char comma = ' ';
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.Name == "id") continue;
+                column_names += comma + property.Name;
+                comma = ',';
+            }
+            string sql = string.Format("SELECT {0} FROM ({1}) WHERE {2}", column_names, type.Name, where_define);
+            return sql;
+        }
+
+        T select_read<T>(DbDataReader reader) where T : class, new()
+        {
+            T t = new T();
+            Type type = typeof(T);
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                string filed_name = reader.GetName(i);
+                PropertyInfo pi = type.GetProperty(filed_name);
+                pi.SetValue(t, reader.GetValue(i));
+            }
+            return t;
+        }
+    }
+
+
+    class TestTemplateClass1
+    {
+        //CURD_Start
+        public T add<T>(T t) where T : EntityBase
+        {
+            try
+            {
+                string sql = t.insert_sql();
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    t.set_sql_params(cmd);
+                    int ret = cmd.ExecuteNonQuery();
+                    //int last_insert_id = get_last_insert_id(conn);
+                    //t = get_user(last_insert_id);
+                    return t;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
+
+        public T get<T>(int id) where T : EntityBase, new()
+        {
+            try
+            {
+                T t = new T();
+                string sql = t.select_sql(id);
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        t.Init(reader);
+                    }
+                    return t;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
+
+        public List<T> gets<T>( string where_define) where T : EntityBase, new()
+        {
+            try
+            {
+                List<T> tlist = new List<T>();
+                T t = new T();
+                string sql = t.select_sql(where_define);
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        T tt = new T();
+                        tt.Init(reader);
+                        tlist.Add(tt);
+                    }
+                    return tlist;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
+
+        public List<dynamic> gets<T>(string columns, string where_define) where T : EntityBase, new()
+        {
+            try
+            {
+                List<dynamic> tlist = new List<dynamic>();
+                string[] colnames = columns.Split(new char[] { ',' });
+                string sql = string.Format("SELECT {0} FROM {1} WHERE {2}", columns, typeof(T).Name, where_define);
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        dynamic dt = new ExpandoObject();
+                        for(int i =0; i < reader.FieldCount;i++)
+                        {
+                            dt[colnames[i]] = reader.GetValue(i);
+                        }
+                        tlist.Add(dt);
+                    }
+                    return tlist;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return null;
+        }
+
+        public bool set<T>(T t) where T : EntityBase, new()
+        {
+            try
+            {
+                string sql = t.update_sql(t.id);
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    t.set_sql_params(cmd);
+                    int result = cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return false;
+        }
+
+        public bool sets<T>(dynamic t, string where_define) where T: class
+        {
+            try
+            {
+                string set_values = "";
+                int count = 0;
+                foreach (var property in (IDictionary<String, Object>)t)
+                {
+                    //if (property.Key == "where") continue;
+                    if (count++ > 0) set_values += ',';
+                    set_values += property.Key + "='" + property.Value + "'";
+                }
+                string sql = string.Format("UPDATE {0} SET {1} WHERE {2}",typeof(T).Name, set_values, where_define);
+                
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int result = cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return false;
+        }
+
+        public bool del<T>(int id) where T : EntityBase, new()
+        {
+            try
+            {
+                T t = new T();
+                string sql = t.delete_sql(id);
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int result = cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return false;
+        }
+
+        public bool dels<T>(string where_define) where T : EntityBase, new()
+        {
+            try
+            {
+                T t = new T();
+                string sql = t.delete_sql(where_define);
+                using (SqlConnection conn = new SqlConnection())
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int result = cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (MySqlException ex)
+            {
+            }
+            return false;
+        }
+
+        string insert_sql<T>(T t) where T : class
+        {
+            Type type = typeof(T);
+            PropertyInfo[] properties = type.GetProperties();// ((BindingFlags.Instance | BindingFlags.Public);
+            string column_names = "";
+            string column_values = "";
+            char comma = ' ';
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.Name == "id") continue;
+                column_names += comma + property.Name;
+                column_values += '\'' + property.GetValue(t).ToString() + '\'';
+                comma = ',';
+            }
+            string sql = string.Format("INSERT INTO {0} ({1}) VALUES({2})", column_names, type.Name , column_values);
+            return sql;
+        }
+
+        string update_sql<T>(T t, string where_define) where T : class
+        {
+            Type type = typeof(T);
+            PropertyInfo[] properties = type.GetProperties();// ((BindingFlags.Instance | BindingFlags.Public);
+            string column_name_values = "";
+            char comma = ' ';
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.Name == "id") continue;
+                column_name_values += comma + property.Name + "='" + property.GetValue(t).ToString() + '\'';
+                comma = ',';
+            }
+            string sql = string.Format("UPDATE {0} SET ({1}) WHERE {2}", type.Name, column_name_values, where_define);
+            return sql;
+        }
+        
+        string select_sql<T>(string where_define)
+        {
+            Type type = typeof(T);
+            PropertyInfo[] properties = type.GetProperties();// ((BindingFlags.Instance | BindingFlags.Public);
+            string column_names = "";
+            char comma = ' ';
+            foreach (PropertyInfo property in properties)
+            {
+                if (property.Name == "id") continue;
+                column_names += comma + property.Name;
+                comma = ',';
+            }
+            string sql = string.Format("SELECT {0} FROM ({1}) WHERE {2}", column_names, type.Name, where_define);
+            return sql;
+        }
+
+        T select_read<T>(DbDataReader reader) where T : class, new()
+        {
+            T t = new T();
+            Type type = typeof(T);
+            for (int i =0; i < reader.FieldCount; i++)
+            {
+                string filed_name = reader.GetName(i);
+                PropertyInfo pi = type.GetProperty(filed_name);
+                pi.SetValue(t, reader.GetValue(i));
+            }
+            return t;
+        }
+    }
+
+    class TestClass
+    { 
         public User add_user(User user)  
         {
             try
@@ -315,7 +809,7 @@ namespace Database2Sharp
                         User user = new User();
                         user.id = reader.GetInt32("id");
                         user.username = reader.GetString("username");
-                        user.password = reader.GetString("password");
+                        //user.password = reader.GetString("password");
                         return user;
                     }
                 }
@@ -340,7 +834,7 @@ namespace Database2Sharp
                         User user = new User();
                         user.id = reader.GetInt32("id");
                         user.username = reader.GetString("username");
-                        user.password = reader.GetString("password");
+                        //user.password = reader.GetString("password");
                         return user;
                     }
                 }
@@ -365,7 +859,7 @@ namespace Database2Sharp
                         User user = new User();
                         user.id = reader.GetInt32("id");
                         user.username = reader.GetString("username");
-                        user.password = reader.GetString("password");
+                        //user.password = reader.GetString("password");
                         return user;
                     }
                 }

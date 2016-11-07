@@ -17,8 +17,16 @@ namespace Database2Sharp
             t.password = "password";
             //ttc.sets<User>(t, "id=123");
 
-            User user = new User() { username = "ahai", password = Encoding.Default.GetBytes("baomi"),create_time=DateTime.Now };
-            ttc.add<User>(user);
+            User user = new User()
+            {
+                username = "yx",
+                password = "baomi",
+                create_time = DateTime.Now,
+                info = Encoding.Default.GetBytes("This is a test user")
+            };
+            User u = ttc.add<User>(user).Result;
+            u.password = "password";
+            bool ret = ttc.set(u).Result;
             return;
 
             Mysql2Sharp mssql = new Mysql2Sharp("imbot", "root", "root");

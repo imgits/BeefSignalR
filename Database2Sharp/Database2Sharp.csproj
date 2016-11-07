@@ -72,11 +72,12 @@
     <Compile Include="Mysql2Sharp.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TemplateFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <Compile Include="TemplateFile.cs" />
+    <None Include="TemplateFile.cs.bak" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="InsertStatement.txt" />

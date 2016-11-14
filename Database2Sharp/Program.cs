@@ -23,7 +23,7 @@ namespace Database2Sharp
                 password = "baomi",
                 create_time = DateTime.Now,
                 info = Encoding.Default.GetBytes("This is a test user")
-            };
+            }; 
             User u = ttc.add<User>(user).Result;
             u.password = "password";
             bool ret = ttc.set(u).Result;

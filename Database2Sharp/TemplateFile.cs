@@ -111,12 +111,12 @@ namespace Database2Sharp
         async public Task<T> get<T>(int id) where T : class, new()
         {
             string where_define ="id=" + id;
-            List<T> tlist = await gets<T>(where_define);
+            List<T> tlist = await get<T>(where_define);
             if (tlist != null && tlist.Count > 0) return tlist[0];
             return null;
         }
 
-        async public Task<List<T>> gets<T>(string where_define) where T : class, new()
+        async public Task<List<T>> get<T>(string where_define) where T : class, new()
         {
             try
             {
@@ -152,7 +152,7 @@ namespace Database2Sharp
             return null;
         }
 
-        public List<dynamic> gets<T>(string columns, string where_define) where T : class, new()
+        public List<dynamic> get<T>(string columns, string where_define) where T : class, new()
         {
             try
             {
@@ -288,4 +288,176 @@ namespace Database2Sharp
             return t;
         }
     }
+
+    class Model
+    {
+
+    }
+
+    class TemplateClass
+    {
+        string ConnectionString = "";
+
+        async private Task<int> get_last_insert_id(SqlConnection conn)
+        {
+            string sql = "SELECT LAST_INSERT_ID()";
+            SqlCommand cmd = new SqlCommand(sql, conn);
+            int result = (int)await cmd.ExecuteScalarAsync();
+            return result;
+        }
+
+        void Show(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        //InsertStatementStart
+        async public Task<Model> add_model(Model model)
+        {
+            try
+            {
+                string sql = "INSERT INTO [model] (ColunmNameList) VALUES (ColumnParamList)";
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    //SetParameters
+                    int ret = await cmd.ExecuteNonQueryAsync();
+                    int last_insert_id = await get_last_insert_id(conn);
+                    model = await get_model(last_insert_id);
+                    return model;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Show(ex);
+            }
+            return null;
+        }
+        //InsertStatementEnd
+
+        //SelectStatementStart
+        async public Task<Model> get_model(int id)
+        {
+            try
+            {
+                string sql = string.Format("SELECT * FROM table_name WHERE id={0}", id);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    await conn.OpenAsync();
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
+                    //DefineStream
+                    if (reader.Read())
+                    {
+                        Model model = new Model();
+                        //ReadColumns
+                        return model;
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                Show(ex);
+            }
+            return null;
+        }
+        //SelectStatementEnd
+
+        //SelectStatement1Start
+        async public Task<List<Model>> get_models(string where_definition)
+        {
+            try
+            {
+                List<Model> models = new List<Model>();
+                string sql = string.Format("SELECT * FROM table_name WHERE {0}", where_definition);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    await conn.OpenAsync();
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
+                    //DefineStream
+                    while (reader.Read())
+                    {
+                        Model model = new Model();
+                        //ReadColumns
+                        models.Add(model);
+                    }
+                    return models;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Show(ex);
+            }
+            return null;
+        }
+        //SelectStatement1End
+
+        //UpdateStatementStart
+        async public Task<bool> set_model(Model model)
+        {
+            try
+            {
+                string sql = "UPDATE table_name SET NameValueList WHERE id=@id";
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    await conn.OpenAsync();
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    //SetParameters
+                    int ret = await cmd.ExecuteNonQueryAsync();
+                    return true;
+                }
+            }
+            catch (SqlException ex)
+            {
+            }
+            return false;
+        }
+        //UpdateStatementEnd
+
+        //DeleteStatementStart
+        async public Task<bool> del_model(int id)
+        {
+            try
+            {
+                string sql = string.Format("DELETE FROM table_name WHERE id={0}", id);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    await conn.OpenAsync();
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int ret = await cmd.ExecuteNonQueryAsync();
+                    return true;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Show(ex);
+            }
+            return false;
+        }
+        //DeleteStatementEnd
+
+        //DeleteStatement1Start
+        async public Task<bool> del_model(string where_definition)
+        {
+            try
+            {
+                string sql = string.Format("DELETE FROM table_name WHERE {0}", where_definition);
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    await conn.OpenAsync();
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    int ret = await cmd.ExecuteNonQueryAsync();
+                    return true;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Show(ex);
+            }
+            return false;
+        }
+        //DeleteStatement1End
+    }
+
 }

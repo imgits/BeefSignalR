@@ -28,7 +28,7 @@ namespace Database2Sharp
             u.password = "password";
             bool ret = ttc.set(u).Result;
             return;
- 
+  
             Mysql2Sharp mssql = new Mysql2Sharp("imbot", "root", "root");
             mssql.GetSchema();
             foreach(DbSchemaTable table in mssql.Tables)

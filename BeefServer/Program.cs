@@ -14,12 +14,12 @@ namespace BeefServer
     {
         static void Main(string[] args)
         {
-            BeefDbContext.Init();
-            using (Database.BeefDbContext Db = new Database.BeefDbContext())
-            {
-                User user = new User() { username= "ahai",password="password",role="admin"};
-                //Db.add_user(user);
-            }
+            //BeefDbContext.Init();
+            //using (Database.BeefDbContext Db = new Database.BeefDbContext())
+            //{
+            //    User user = new User() { username= "ahai",password="password",role="admin"};
+            //    //Db.add_user(user);
+            //}
 
             using (WebApp.Start<Startup>("http://+:8088/"))
             {

@@ -34,7 +34,7 @@ namespace BeefServer
 
             ConfigFileSystem(app);
 
-            //ConfigureAuth(app);
+            ConfigureAuth(app);
 
             app.MapSignalR();
         }
